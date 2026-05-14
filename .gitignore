@@ -1,0 +1,9 @@
+.DS_Store
+.idea/
+.venv/
+__pycache__/
+*.pyc
+*.db
+numizmat.db
+.env
+coins_bot/uploads/*
