@@ -10,7 +10,7 @@ import database as db
 
 TOKEN = "7309999677:AAH81sxLgRhIBHDx6eJaGgvxahdR34A86OU"
 ADMIN_ID = 785061652
-MINI_APP_URL = "https://nonmunicipal-stacee-overrestraint.ngrok-free.dev"
+MINI_APP_URL = "https://historycoin-frontend.vercel.app"
 
 bot = Bot(token=TOKEN)
 storage = MemoryStorage()

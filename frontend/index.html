@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Нумизмат — История денег России</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- imgs.js должен лежать в той же папке на сервере -->
+    <script src="imgs.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{
+            --bg:var(--tg-theme-bg-color,#fff);
+            --sec:var(--tg-theme-secondary-bg-color,#f1f1f3);
+            --text:var(--tg-theme-text-color,#111);
+            --hint:var(--tg-theme-hint-color,#888);
+            --acc:var(--tg-theme-button-color,#2481cc);
+            --acc-t:var(--tg-theme-button-text-color,#fff)
+        }
+        body{font-family:-apple-system,system-ui,sans-serif;background:var(--sec);color:var(--text);padding-bottom:70px}
+        .page{display:none;padding:12px;animation:fi .2s}
+        .page.active{display:block}
+        @keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+        .bnav{position:fixed;bottom:0;width:100%;height:60px;background:var(--bg);border-top:1px solid rgba(0,0,0,.1);display:flex;justify-content:space-around;align-items:center;z-index:1000}
+        .ni{text-align:center;font-size:10px;color:var(--hint);cursor:pointer;flex:1;padding:6px 0}
+        .ni.active{color:var(--acc)}
+        .ni span{font-size:22px;display:block;margin-bottom:1px}
+        .srch{position:sticky;top:0;background:var(--bg);padding:10px 12px;z-index:100;box-shadow:0 1px 8px rgba(0,0,0,.05)}
+        .sinp{width:100%;padding:9px 14px;border-radius:12px;border:none;background:var(--sec);color:var(--text);font-size:15px;outline:none}
+        /* CARDS */
+        .card{background:var(--bg);border-radius:14px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06);cursor:pointer}
+        .card:active{transform:scale(.98)}
+        .cphoto{width:100%;height:180px;object-fit:contain;background:var(--sec);display:block}
+        .cph{width:100%;height:130px;background:var(--sec);display:flex;align-items:center;justify-content:center;font-size:52px}
+        .cinfo{padding:12px 14px}
+        .ctitle{font-size:15px;font-weight:700;margin-bottom:2px}
+        .cmeta{font-size:12px;color:var(--hint);margin-bottom:5px}
+        .cbuy{font-size:12px;color:var(--acc)}
+        .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+        .tag{background:var(--sec);border-radius:16px;padding:3px 9px;font-size:11px}
+        .tg{background:#d4edda;color:#155724}
+        .tb{background:#cce5ff;color:#004085}
+        /* PERIOD */
+        .pc{background:var(--bg);border-radius:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05);overflow:hidden}
+        .ph{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+        .pt{font-size:15px;font-weight:700}
+        .ps{font-size:12px;color:var(--hint);margin-top:2px}
+        .pb{display:none;border-top:1px solid var(--sec)}
+        .pb.open{display:block}
+        .ptext{padding:14px 16px;font-size:13px;line-height:1.6}
+        .pstats{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 12px}
+        .pst{background:var(--sec);border-radius:10px;padding:5px 10px;font-size:11px}
+        .cscroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 14px;scrollbar-width:none}
+        .cscroll::-webkit-scrollbar{display:none}
+        .cth{min-width:110px;background:var(--sec);border-radius:12px;overflow:hidden;cursor:pointer;flex-shrink:0}
+        .cth img{width:110px;height:75px;object-fit:contain;display:block;background:var(--sec)}
+        .cthph{width:110px;height:75px;display:flex;align-items:center;justify-content:center;font-size:30px}
+        .cthi{padding:6px 8px}
+        .cthn{font-size:12px;font-weight:700}
+        .cthy{font-size:10px;color:var(--hint)}
+        /* MODAL */
+        .mover{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);z-index:2000;display:none;align-items:flex-end;justify-content:center}
+        .mover.open{display:flex}
+        .mbody{background:var(--bg);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:88vh;overflow-y:auto}
+        .mphoto{width:100%;max-height:220px;object-fit:contain;border-radius:12px;background:var(--sec);display:block;margin-bottom:14px}
+        .mph{width:100%;height:150px;background:var(--sec);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:70px;margin-bottom:14px}
+        .mtitle{font-size:20px;font-weight:800;margin-bottom:12px}
+        .mrow{display:flex;gap:8px;margin-bottom:8px;font-size:14px}
+        .mlbl{color:var(--hint);min-width:100px}
+        .buylist li{font-size:13px;padding:5px 0;border-bottom:1px solid var(--sec);list-style:none}
+        .buylist li::before{content:"• ";color:var(--acc)}
+        .factbox{background:var(--sec);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--hint);line-height:1.5;margin:10px 0}
+        .mbtn{width:100%;padding:13px;border:none;border-radius:13px;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+        .mba{background:var(--acc);color:var(--acc-t)}
+        .mbs{background:var(--sec);color:var(--text)}
+        /* AUCTION */
+        .lcard{background:var(--bg);border-radius:14px;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+        .lphoto{width:100%;height:200px;object-fit:contain;background:var(--sec);display:block}
+        .lph{width:100%;height:160px;background:var(--sec);display:flex;align-items:center;justify-content:center;font-size:64px}
+        .linfo{padding:14px}
+        .ltitle{font-size:16px;font-weight:700;margin-bottom:4px}
+        .lprice{font-size:18px;color:var(--acc);font-weight:700;margin:6px 0}
+        .lmeta{font-size:12px;color:var(--hint);margin-bottom:8px}
+        .lbtn{background:var(--acc);color:var(--acc-t);border:none;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer}
+        .lbtn.del{background:#e74c3c}
+        .abtn{width:100%;padding:14px;background:var(--acc);color:var(--acc-t);border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px}
+        .fg{margin-bottom:12px}
+        .fl{font-size:12px;color:var(--hint);margin-bottom:4px}
+        .fi,.fsel{width:100%;padding:10px 12px;border-radius:12px;border:none;background:var(--sec);color:var(--text);font-size:15px;outline:none}
+        .fi:focus{outline:2px solid var(--acc)}
+        .upz{border:2px dashed var(--acc);border-radius:14px;padding:24px;text-align:center;cursor:pointer;color:var(--acc);font-size:14px}
+        .upz.has{border-color:#27ae60;color:#27ae60}
+        .upprev{width:100%;height:150px;object-fit:contain;border-radius:12px;margin-top:8px;display:none}
+        /* PROFILE */
+        .ptop{background:var(--bg);border-radius:16px;padding:20px;text-align:center;margin-bottom:12px}
+        .ava{width:72px;height:72px;background:var(--acc);border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px}
+        .rbadge{display:inline-block;padding:3px 12px;background:var(--sec);border-radius:20px;font-size:12px;margin-top:6px}
+        .srow{display:flex;gap:10px;margin-top:14px}
+        .sbox{flex:1;background:var(--sec);border-radius:12px;padding:10px;text-align:center}
+        .sval{font-size:22px;font-weight:800}
+        .slbl{font-size:10px;color:var(--hint)}
+        .sec-card{background:var(--bg);border-radius:16px;padding:14px;margin-bottom:12px}
+        .sec-card h3{font-size:15px;font-weight:700;margin-bottom:10px}
+        .chip{display:inline-flex;gap:4px;background:var(--sec);border-radius:20px;padding:5px 10px;font-size:12px;margin:3px}
+        .ai{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--sec)}
+        .aico{font-size:26px}
+        .an{font-size:14px;font-weight:600}
+        .ad{font-size:11px;color:var(--hint)}
+        .ai.locked{opacity:.38}
+        .qq{font-size:14px;font-weight:600;margin-bottom:10px;line-height:1.4}
+        .qp{font-size:12px;color:var(--hint);margin-bottom:8px}
+        .qo{background:var(--sec);padding:11px 14px;margin-bottom:7px;border-radius:11px;cursor:pointer;font-size:14px;transition:.15s}
+        .qo.correct{background:#27ae60;color:#fff}
+        .qo.wrong{background:#e74c3c;color:#fff}
+        .lnk{display:block;text-align:center;padding:10px;background:var(--sec);border-radius:12px;color:var(--acc);text-decoration:none;font-size:13px;margin-top:8px}
+        .ptitle{font-size:20px;font-weight:800;margin-bottom:3px}
+        .psub{font-size:12px;color:var(--hint);margin-bottom:12px}
+    </style>
+</head>
+<body>
+<div class="srch" id="srch" style="display:none">
+    <input class="sinp" id="csrch" placeholder="Поиск: 1924, копейка, рубль..." oninput="filterCoins()">
+</div>
+<div id="page-catalog" class="page active">
+    <p class="ptitle">🪙 Каталог</p>
+    <p class="psub">Нажмите на монету — узнайте историю и цены</p>
+    <div id="cfeed"></div>
+</div>
+<div id="page-history" class="page">
+    <p class="ptitle">📜 История</p>
+    <p class="psub">Денежная система России 1917–2024</p>
+    <div id="pfeed"></div>
+</div>
+<div id="page-auction" class="page">
+    <p class="ptitle">🔨 Аукцион</p>
+    <p class="psub">Продайте или купите коллекционные монеты</p>
+    <button class="abtn" onclick="toggleAF()">➕ Выставить монету / банкноту</button>
+    <div id="aform" style="display:none">
+        <div class="sec-card">
+            <h3>📤 Новый лот</h3>
+            <div class="fg"><div class="fl">Название *</div><input class="fi" id="ft" placeholder="1 рубль 1924 года"></div>
+            <div class="fg"><div class="fl">Описание / состояние</div><input class="fi" id="fd" placeholder="XF, без обращения"></div>
+            <div class="fg"><div class="fl">Период</div>
+                <select class="fsel" id="fp"><option value="">— выберите —</option>
+                    <option>1917–1924 | Революция</option><option>1924–1947 | НЭП</option>
+                    <option>1947–1961 | Послевоенный</option><option>1961–1991 | Поздний СССР</option>
+                    <option>1991–1998 | Гиперинфляция</option><option>1998–2024 | Современный</option>
+                </select>
+            </div>
+            <div class="fg"><div class="fl">Год выпуска</div><input class="fi" id="fy" placeholder="1924" type="number"></div>
+            <div class="fg"><div class="fl">Материал</div><input class="fi" id="fm" placeholder="Серебро 900°"></div>
+            <div class="fg"><div class="fl">Цена *</div><input class="fi" id="fpr" placeholder="500 руб. / договорная"></div>
+            <div class="fg">
+                <div class="fl">Фотография</div>
+                <div class="upz" id="upz" onclick="document.getElementById('fph').click()">📷 Нажмите чтобы выбрать фото</div>
+                <input type="file" id="fph" accept="image/*" style="display:none" onchange="handlePhoto(this)">
+                <img id="upprev" class="upprev">
+            </div>
+            <button class="mbtn mba" onclick="submitLot()">✅ Выставить на аукцион</button>
+            <button class="mbtn mbs" onclick="toggleAF()">Отмена</button>
+        </div>
+    </div>
+    <div id="lfeed"></div>
+</div>
+<div id="page-profile" class="page">
+    <div class="ptop">
+        <div class="ava" id="av">К</div>
+        <div style="font-size:18px;font-weight:800" id="uname">—</div>
+        <div class="rbadge" id="rbadge">🥉 Новичок</div>
+        <div class="srow">
+            <div class="sbox"><div class="sval" id="ss">0</div><div class="slbl">Очков</div></div>
+            <div class="sbox"><div class="sval" id="sc">0</div><div class="slbl">Монет</div></div>
+            <div class="sbox"><div class="sval" id="sq">0</div><div class="slbl">Ответов</div></div>
+        </div>
+    </div>
+    <div class="sec-card"><h3>📚 Моя коллекция</h3><div id="mcoll"><p style="color:var(--hint);font-size:13px">Добавляйте монеты из Каталога →</p></div></div>
+    <div class="sec-card"><h3>❓ Викторина</h3><div id="qblock"></div></div>
+    <div class="sec-card"><h3>🏆 Достижения</h3><div id="achlist"></div></div>
+    <div class="sec-card">
+        <h3>📖 О проекте</h3>
+        <p style="font-size:13px;color:var(--hint);line-height:1.5">Козинцев Я., Суворов М., Долгушин М., Насенников М., Петров С.<br>Business Informatics, ИТМО, 2025</p>
+        <a class="lnk" href="https://www.russian-money.ru/" target="_blank">🔗 russian-money.ru — каталог монет</a>
+        <a class="lnk" href="https://bigmuseum.ru/banknotes/russia/" target="_blank">🔗 BigMuseum — фото банкнот</a>
+    </div>
+</div>
+<div class="mover" id="mover" onclick="handleOC(event)"><div class="mbody" id="mbody"></div></div>
+<div class="bnav">
+    <div class="ni active" id="nc" onclick="showPage('catalog',this)"><span>📦</span>Каталог</div>
+    <div class="ni" id="nh" onclick="showPage('history',this)"><span>📜</span>История</div>
+    <div class="ni" id="na" onclick="showPage('auction',this)"><span>🔨</span>Аукцион</div>
+    <div class="ni" id="np" onclick="showPage('profile',this)"><span>👤</span>Профиль</div>
+</div>
+<script>
+const tg=window.Telegram?.WebApp;
+if(tg){tg.expand();tg.enableClosingConfirmation();}
+const user=tg?.initDataUnsafe?.user||{first_name:"Коллекционер",id:0};
+const AID=785061652;
+
+const PD=[
+    {key:"1917-1924",color:"#c0392b",title:"🔥 1917–1924",sub:"Революция и Гражданская война",
+     ov:"В годы Революции и Гражданской войны денежная система страны фактически распалась. Одновременно ходили царские рубли, «керенки», совзнаки и местные выпуски. Инфляция достигала сотен процентов в месяц.\n\nВ 1922–1924 годах прошла реформа: введён золотой червонец, совзнаки изъяты. Один новый рубль обменивался на 50 000 старых совзнаков образца 1923 года.",
+     inf:"~1000%/год",mx:"25 000 руб. (совзнак)",mat:"Бумага без защиты; золото (червонец)",usd:"1 червонец ≈ $1"},
+    {key:"1924-1947",color:"#d35400",title:"⚒️ 1924–1947",sub:"НЭП и довоенный СССР",
+     ov:"После реформы рубль стал твёрдой валютой. В 1924 году выпущены первые советские монеты: медные копейки, серебряные 10–50 коп. и рубль.\n\nВ 1937 году на купюрах впервые появился портрет Ленина. Во время войны карточная система сдержала инфляцию.",
+     inf:"Стабильно низкая",mx:"100 рублей",mat:"Серебро 500°/900°, медь, бумага",usd:"1 руб. ≈ $0.50"},
+    {key:"1947-1961",color:"#27ae60",title:"🏗️ 1947–1961",sub:"Послевоенные реформы",
+     ov:"В 1947 году прошла денежная реформа: старые банкноты обменивались 10:1. Одновременно отменили карточки — впервые после 1941 года советские граждане могли свободно покупать продукты.\n\nВ 1961 году — новая деноминация 10:1, появились «хрущёвские фантики».",
+     inf:"Дефляция 1948–1953",mx:"100 рублей",mat:"Медно-никелевый сплав, бумага",usd:"1 руб. = $0.25"},
+    {key:"1961-1991",color:"#2980b9",title:"☭ 1961–1991",sub:"Поздний СССР",
+     ov:"Монеты и купюры образца 1961 года оставались в обращении почти 30 лет. Народные прозвища: трояк, пятёрка, червонец, четвертак, полтинник, сотня.\n\nВ 1991 году вышли купюры 200, 500 и 1000 рублей — «павловская реформа». Это были последние деньги СССР.",
+     inf:"2–4% (до 1989)",mx:"1000 рублей (1991)",mat:"Медно-никелевый сплав, биметалл, бумага",usd:"1 руб. = $1.11 (нерыночный)"},
+    {key:"1991-1998",color:"#8e44ad",title:"📉 1991–1998",sub:"Гиперинфляция и деноминация",
+     ov:"После распада СССР Россия выпустила собственные монеты от 1 до 100 рублей. Из-за гиперинфляции их покупательная способность быстро падала.\n\nУже к 1994 году чеканка монет практически прекратилась. После деноминации 1998 года (1000:1) эти монеты выведены из обращения.",
+     inf:"2500% в 1992",mx:"500 000 рублей (1995)",mat:"Сталь (1992–1998), биметалл",usd:"$1 = 6000 руб. (1997)"},
+    {key:"1998-2024",color:"#16a085",title:"🇷🇺 1998–2024",sub:"Современный рубль",
+     ov:"Деноминация 1998 года вернула привычный масштаб цен. На банкнотах — архитектурные виды городов России: Красноярск, Хабаровск, Ярославль, Москва, Санкт-Петербург.\n\nВ 2023 году запущен цифровой рубль — третья форма национальной валюты.",
+     inf:"36% (1999), 4–6% (2010-е)",mx:"10 000 рублей (2023)",mat:"Сталь с покрытием, биметалл, хлопок",usd:"$1 = 30–95 руб."}
+];
+
+const C=[
+    {p:"1917-1924",n:"1 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1_1919",buy:["Коробок спичек","Несколько газет"],fact:"Выпускались листами по 25 штук и разрезались вручную. Дата на бумаге не ставилась."},
+    {p:"1917-1924",n:"1 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1_1922",buy:["Капуста квашеная (фунт, 409 г): ~3 руб."],fact:"Введён в ходе деноминации: 1 новый рубль = 10 000 старых совзнаков."},
+    {p:"1917-1924",n:"1 руб.",y:"1923 (1-й вып.)",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1_1923a",buy:["Хлеб (фунт): 15–20 руб."],fact:"1923 год — ещё одна деноминация: 1 новый рубль = 100 рублей образца 1922 года."},
+    {p:"1917-1924",n:"3 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"3_1919",buy:["Стакан молока на рынке"],fact:"Одни из первых совзнаков РСФСР. Печатались без защиты — легко подделывались."},
+    {p:"1917-1924",n:"3 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"3_1922",buy:["Капуста квашеная (фунт)"],fact:"Три рубля 1922 года — уже более устойчивая денежная система НЭПа."},
+    {p:"1917-1924",n:"5 руб.",y:"1920",mat:"Бумага",t:"Банкнота",e:"🧾",img:"5_1920",buy:["Пол-литра растительного масла (1920)"],fact:"Пятирублёвые совзнаки печатались огромными тиражами — ценность падала быстро."},
+    {p:"1917-1924",n:"5 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"5_1922",buy:["Хлеб (фунт): 15–20 руб."],fact:"Пять рублей 1922 — треть фунта хлеба. Покупательная способность падала ежемесячно."},
+    {p:"1917-1924",n:"10 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"10_1922",buy:["Молоко (бутылка): 10 руб. (1922)"],fact:"Десять рублей образца 1922 года — бутылка молока."},
+    {p:"1917-1924",n:"15 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"15_1919",buy:["Масло подсолнечное (фунт, 409 г): 12–16 руб."],fact:"Выпускались в листах по 10 штук (2×5). Использовались до 1 июля 1922 года."},
+    {p:"1917-1924",n:"30 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"30_1919",buy:["Гусь (шт.): 30–40 руб."],fact:"Хватало на одного гуся на рынке в 1919 году."},
+    {p:"1917-1924",n:"60 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"60_1919",buy:["Пуд ржи (16 кг): 50–70 руб."],fact:"Необычный номинал — для удобства расчётов при стремительном росте цен."},
+    {p:"1917-1924",n:"100 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"100_1919",buy:["Капуста белокочанная (пуд, ~16 кг): 80–120 руб."],fact:"Высокий номинал — признак нарастающей инфляции в годы Гражданской войны."},
+    {p:"1917-1924",n:"100 руб. (красная)",y:"1921",mat:"Бумага",t:"Банкнота",e:"🧾",img:"100_1921r",buy:["Мясо (кг): 80–100 руб."],fact:"Две разновидности 100 руб. 1921 года — красная и жёлтая. Коллекционеры ценят обе."},
+    {p:"1917-1924",n:"100 руб. (жёлтая)",y:"1921",mat:"Бумага",t:"Банкнота",e:"🧾",img:"100_1921y",buy:["Мясо (кг): 80–100 руб."],fact:"Жёлтый вариант 1921 года — встречается реже красного."},
+    {p:"1917-1924",n:"250 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"250_1919",buy:["Сапоги (пара) в 1919 году"],fact:"На двести пятьдесят рублей 1919 года можно было купить пару сапог."},
+    {p:"1917-1924",n:"250 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"250_1922",buy:["Мясо (кг): 80–100 руб. — 2.5 кг"],fact:"Банкнота 1922 года отличается более качественной печатью — знак стабилизации."},
+    {p:"1917-1924",n:"500 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"500_1919",buy:["Шуба б/у на рынке (1919)"],fact:"Пятьсот рублей — крупная сумма на базаре, но уже через год покупала вдвое меньше."},
+    {p:"1917-1924",n:"500 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"500_1922",buy:["Продуктовая корзина в месяц: 200–220 руб. (~2 корзины)"],fact:"К 1922 году 500 рублей — примерно двухмесячная продуктовая корзина."},
+    {p:"1917-1924",n:"1000 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1000_1919",buy:["Дрова (кубометр): ~1000 руб."],fact:"К 1919 году тысяча рублей — стоимость кубометра дров."},
+    {p:"1917-1924",n:"1000 руб.",y:"1921",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1000_1921",buy:["Пуд сахара (16 кг) = 900–1200 руб."],fact:"1921 год — пик инфляции. Тысяча рублей едва покрывала пуд сахара."},
+    {p:"1917-1924",n:"1000 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1000_1922",buy:["~4–5 продуктовых корзин месяца"],fact:"Тысяча рублей 1922 года — уже более реальный номинал после деноминации."},
+    {p:"1917-1924",n:"5000 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"5000_1919",buy:["Корова (средняя) на рынке в 1919–1920 гг."],fact:"Пять тысяч рублей — цена коровы на деревенском рынке."},
+    {p:"1917-1924",n:"10 000 руб.",y:"1919",mat:"Бумага",t:"Банкнота",e:"🧾",img:"10000_1919",buy:["Лошадь рабочая (1919–1921)"],fact:"Десять тысяч рублей — цена рабочей лошади. Номиналы росли вместе с инфляцией."},
+    {p:"1917-1924",n:"25 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"25_1922",buy:["Хлеб (фунт): 15–20 руб. (~1.5 фунта)"],fact:"Двадцать пять рублей образца 1922 года — полтора фунта хлеба на рынке."},
+    {p:"1917-1924",n:"50 руб.",y:"1922",mat:"Бумага",t:"Банкнота",e:"🧾",img:"50_1922",buy:["Соль (кг): 65 руб. — почти хватает"],fact:"Пятьдесят рублей 1922 года — почти килограмм соли, очень ценного продукта."},
+    // 1961-1991 банкноты
+    {p:"1961-1991",n:"1 руб.",y:"1961–1990",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1_1961",buy:["Яйца (десяток): 90 коп.–1 руб."],fact:"Самая простая купюра: герб, узоры, жёлто-коричневые тона. «Казначейский билет»."},
+    {p:"1961-1991",n:"3 руб.",y:"1961–1990",mat:"Бумага",t:"Банкнота",e:"🧾",img:"3_1961",buy:["1 кг «Докторской» колбасы (2 руб. 90 коп.)","1 кг сыра «Российский»"],fact:"«Трояк» — зелёная купюра со Спасской башней и Кремлём."},
+    {p:"1961-1991",n:"5 руб.",y:"1961–1990",mat:"Бумага",t:"Банкнота",e:"🧾",img:"5_1961",buy:["1 кг шоколадных конфет","Мужская рубашка"],fact:"«Пятёрка» — синего цвета с Кремлём."},
+    {p:"1961-1991",n:"10 руб.",y:"1961–1990",mat:"Бумага",t:"Банкнота",e:"🧾",img:"10_1961",buy:["Женские босоножки отечественные","Плацкарт Москва–Урал"],fact:"«Червонец» — красного цвета с портретом Ленина."},
+    {p:"1961-1991",n:"25 руб.",y:"1961–1990",mat:"Бумага",t:"Банкнота",e:"🧾",img:"25_1961",buy:["Люстра «под хрусталь»","Гитара «Ленинград»","Говядина 14 кг"],fact:"«Четвертак». Средняя зарплата молодого специалиста — 5–6 таких купюр."},
+    {p:"1961-1991",n:"50 руб.",y:"1961–1990",mat:"Бумага",t:"Банкнота",e:"🧾",img:"50_1961",buy:["Позолоченные часы","Пылесос «Тайфун»"],fact:"«Полтинник» — башни Кремля и портрет Ленина."},
+    {p:"1961-1991",n:"100 руб.",y:"1961–1990",mat:"Бумага",t:"Банкнота",e:"🧾",img:"100_1961",buy:["Тур в Болгарию (10 дней)","Мужской костюм"],fact:"«Сотня» — самая крупная купюра вплоть до 1991 года."},
+    {p:"1961-1991",n:"1 руб.",y:"1991 (Павловская)",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1_1991bn",buy:["Толстая книга","Билет в цирк (с 10-го ряда)"],fact:"Последние советские рубли. Две белые полосы по краям вместо одной."},
+    {p:"1961-1991",n:"3 руб.",y:"1991 (Павловская)",mat:"Бумага",t:"Банкнота",e:"🧾",img:"3_1991bn",buy:["Торт «Наполеон»","Импортная виниловая пластинка"],fact:"Три рубля 1991 года — торт «Наполеон» или виниловая пластинка."},
+    {p:"1961-1991",n:"5 руб.",y:"1991 (Павловская)",mat:"Бумага",t:"Банкнота",e:"🧾",img:"5_1991bn",buy:["Говядина 2,5 кг","Пельмени 3,5 кг"],fact:"Год последней реформы СССР — 1991."},
+    {p:"1961-1991",n:"10 руб.",y:"1991 (Павловская)",mat:"Бумага",t:"Банкнота",e:"🧾",img:"10_1991bn",buy:["Деревянный стул","Спиннинг"],fact:"«Червонец» 1991 года — последний советский."},
+    {p:"1961-1991",n:"50 руб.",y:"1991 (Павловская)",mat:"Бумага",t:"Банкнота",e:"🧾",img:"50_1991bn",buy:["15–20 л молока или сметаны","1000 поездок в метро"],fact:"50 рублей 1991 года это не то же самое, что 50 рублей 1961-го."},
+    {p:"1961-1991",n:"100 руб. (1-й вып.)",y:"1991",mat:"Бумага",t:"Банкнота",e:"🧾",img:"100_1991bn1",buy:["Билет в кино — 200 раз","Зарплата студента"],fact:"Водяной знак — портрет Ленина. Именно эту купюру изъяли в январе 1991-го без предупреждения."},
+    {p:"1961-1991",n:"100 руб. (2-й вып.)",y:"1991",mat:"Бумага",t:"Банкнота",e:"🧾",img:"100_1991bn2",buy:["Дорогой мужской галстук (1991)"],fact:"Водяной знак — звёзды. Второй выпуск после скандального изъятия первого."},
+    {p:"1961-1991",n:"200 руб.",y:"1991",mat:"Бумага",t:"Банкнота",e:"🧾",img:"200_1991bn",buy:["Первый в истории СССР номинал 200 рублей"],fact:"200 рублей — новый номинал, которого в СССР никогда не было. Знак кризиса."},
+    {p:"1961-1991",n:"500 руб.",y:"1991",mat:"Бумага",t:"Банкнота",e:"🧾",img:"500_1991bn",buy:["Цветной телевизор (б/у)","Пылесос отечественный"],fact:"500 рублей — телевизор в 1991 году. Уже через год это будет стакан сахара."},
+    {p:"1961-1991",n:"1000 руб.",y:"1991",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1000_1991bn",buy:["~полмесячной зарплаты (1991)"],fact:"Тысяча рублей — самый крупный советский номинал. Последние деньги СССР."},
+    // 1991-1998 Россия
+    {p:"1991-1998",n:"50 руб.",y:"1992",mat:"Бумага",t:"Банкнота",e:"🧾",img:"50_1992bn",buy:["(1992) Кило мяса","(1993) Буханка хлеба"],fact:"Первые российские банкноты без серпа и молота."},
+    {p:"1991-1998",n:"200 руб.",y:"1992",mat:"Бумага",t:"Банкнота",e:"🧾",img:"200_1992bn",buy:["(1992) Бутылка водки","(1993) Коробок спичек"],fact:"Двести рублей 1992 года — бутылка водки. К 1993-му — коробок спичек."},
+    {p:"1991-1998",n:"500 руб.",y:"1992",mat:"Бумага",t:"Банкнота",e:"🧾",img:"500_1992bn",buy:["(1992) Набор продуктов на неделю","(1993) Проездной на день"],fact:"Пятьсот рублей 1992 — за полгода потеряли 70% ценности."},
+    {p:"1991-1998",n:"1000 руб.",y:"1992",mat:"Бумага",t:"Банкнота",e:"🧾",img:"1000_1992bn",buy:["(1992) Пара кроссовок","(1993) Пачка сигарет"],fact:"Тысяча рублей 1992 года = в 1998-м стала 1 рублём после деноминации."},
+    // Монеты 1961-1991
+    {p:"1961-1991",n:"1 коп.",y:"1961–1991",mat:"Медно-цинк (латунь)",t:"Монета",e:"🟡",img:"1kop_61",buy:["Почтовый конверт (1 коп.)"],fact:"«Надпись СССР по одной линии» — новый стиль после реформы 1961 года."},
+    {p:"1961-1991",n:"2 коп.",y:"1961–1991",mat:"Медно-цинк (латунь)",t:"Монета",e:"🟡",img:"2kop_61",buy:["Ластик (2 коп.)","Газета"],fact:"На монеты 2 копейки советские дети покупали жвачку на рынке."},
+    {p:"1961-1991",n:"3 коп.",y:"1961–1991",mat:"Медно-цинк (латунь)",t:"Монета",e:"🟡",img:"3kop_61",buy:["Проезд в троллейбусе (3 коп.)","Стакан газировки без сиропа"],fact:"«Трёшка» — самая популярная монета для троллейбуса."},
+    {p:"1961-1991",n:"5 коп.",y:"1961–1991",mat:"Медно-цинк (латунь)",t:"Монета",e:"🟡",img:"5kop_61",buy:["Проезд в автобусе (5 коп.)","Метро (5 коп.)","Газировка с сиропом"],fact:"Пятак — хватало на метро, автобус или газировку с сиропом."},
+    {p:"1961-1991",n:"10 коп.",y:"1961–1991",mat:"Медно-никель",t:"Монета",e:"🔘",img:"10kop_61",buy:["Картофель (кг): 10 коп.","Телефон-автомат"],fact:"«Гривенник» — основная монета для телефонов-автоматов."},
+    {p:"1961-1991",n:"15 коп.",y:"1961–1991",mat:"Медно-никель",t:"Монета",e:"🔘",img:"15kop_61",buy:["Творог (пачка): 12–22 коп.","Батон: 13 коп.","Пирожное «Эклер»: 15–22 коп."],fact:"«Пятиалтынный» — привычное дореволюционное прозвище."},
+    {p:"1961-1991",n:"20 коп.",y:"1961–1991",mat:"Медно-никель",t:"Монета",e:"🔘",img:"20kop_61",buy:["Эскимо «Каштан» на палочке (20 коп.)"],fact:"Шоколадное эскимо «Каштан» стоило ровно 20 копеек — легендарная цена."},
+    {p:"1961-1991",n:"50 коп.",y:"1961–1991",mat:"Медно-никель",t:"Монета",e:"🔘",img:"50kop_61",buy:["Обед в столовой (с компотом)","~0.5 кг трески"],fact:"«Полтинник» — на 50 копеек можно было пообедать в заводской столовой."},
+    {p:"1961-1991",n:"1 руб.",y:"1961–1991",mat:"Медно-никель",t:"Монета",e:"🔘",img:"1rub_61",buy:["Творог (кг): 92 коп.","Кг сахарного песка: 90–96 коп.","2 билета в кино"],fact:"На три-четыре рубля можно было пообедать и поужинать."},
+    {p:"1961-1991",n:"1 руб.",y:"1991 (ЛМД)",mat:"Медно-никель",t:"Монета",e:"🔘",img:"1rub_1991lmd",buy:["Доллар США: 1 руб. 75 коп. (официально)"],fact:"Последний советский рубль чеканился на Ленинградском монетном дворе (ЛМД)."},
+    {p:"1961-1991",n:"5 руб.",y:"1991 (ЛМД)",mat:"Медно-никель",t:"Монета",e:"🔘",img:"5rub_1991lmd",buy:["Рыба треска (кг): 2 руб. 50 коп.","Пиво бочковое (литр): 1 руб. 80 коп."],fact:"Пятирублёвая монета 1991 года — одна из последних советских монет."},
+    {p:"1961-1991",n:"10 руб.",y:"1991 (ЛМД)",mat:"Биметалл",t:"Монета",e:"🔘",img:"10rub_1991lmd",buy:["Сыр (кг): 6 руб.","Лещ холодного копчения (кг): 5 руб. 70 коп."],fact:"Биметаллические монеты — бронзовый кружок с медно-никелевым ободком."},
+    {p:"1961-1991",n:"10 коп.",y:"1991",mat:"Сталь/латунь",t:"Монета",e:"🔘",img:"10kop_1991",buy:["Газета в 1991 году"],fact:"10 копеек 1991 года — обновлённый дизайн на закате СССР."},
+    {p:"1961-1991",n:"50 коп.",y:"1991",mat:"Медно-никель",t:"Монета",e:"🔘",img:"50kop_1991",buy:["Молоко (литр): 50–80 коп. (1991)"],fact:"Одна из последних копеечных монет."},
+];
+
+const QQ=[
+    {q:"В каком году введён золотой советский червонец?",o:["1917","1922","1924","1930"],a:1},
+    {q:"Сколько копеек стоил проезд в московском метро (1961–1990)?",o:["3","5","10","15"],a:1},
+    {q:"Как называлась купюра в 25 рублей образца 1961 года?",o:["Четвертак","Полтинник","Трёшка","Червонец"],a:0},
+    {q:"В каком соотношении обменивались деньги по реформе 1947 года?",o:["1:1","5:1","10:1","100:1"],a:2},
+    {q:"Что можно было купить на 5 копеек в СССР 1970-х?",o:["Кг колбасы","Мороженое","Проезд в автобусе","Бутылку молока"],a:2},
+    {q:"Сколько старых рублей = 1 рублю после деноминации 1998 года?",o:["10","100","1000","10000"],a:2},
+    {q:"Какой город изображён на банкноте 5000 рублей?",o:["Москва","Санкт-Петербург","Хабаровск","Красноярск"],a:2},
+    {q:"Как называлась последняя денежная реформа СССР (1991)?",o:["Хрущёвская","Павловская","Горбачёвская","Брежневская"],a:1},
+    {q:"Из какого металла монеты 1 руб. образца 1992 года?",o:["Медь","Серебро","Сталь","Никель"],a:2},
+    {q:"Что стоило ровно 20 копеек в СССР?",o:["Буханка хлеба","Проезд в метро","Эскимо «Каштан»","Стакан молока"],a:2},
+];
+
+const ACH=[
+    {id:"f",i:"🥉",n:"Первый шаг",d:"Открыли приложение",c:p=>true},
+    {id:"c3",i:"🪙",n:"Любопытный",d:"Добавьте 3 монеты в коллекцию",c:p=>p.col.length>=3},
+    {id:"c10",i:"💰",n:"Коллекционер",d:"Добавьте 10 монет",c:p=>p.col.length>=10},
+    {id:"h1",i:"📖",n:"Историк",d:"Откройте хотя бы один период",c:p=>p.pv>0},
+    {id:"ha",i:"📚",n:"Профессор",d:"Откройте все 6 периодов",c:p=>p.pv>=6},
+    {id:"q5",i:"❓",n:"Студент",d:"Ответьте на 5 вопросов",c:p=>p.qt>=5},
+    {id:"q10",i:"🧠",n:"Знаток",d:"Дайте 10 верных ответов",c:p=>p.qc>=10},
+    {id:"s50",i:"⭐",n:"50 очков",d:"Наберите 50 очков",c:p=>p.score>=50},
+    {id:"s200",i:"🌟",n:"200 очков",d:"Наберите 200 очков",c:p=>p.score>=200},
+    {id:"l1",i:"🔨",n:"Торговец",d:"Выставите лот на аукцион",c:p=>p.lots>0},
+];
+
+// PROFILE
+let pr=function(){try{return JSON.parse(localStorage.getItem("nm5"))||{};}catch(e){return {};}}();
+pr={score:0,col:[],qt:0,qc:0,pv:0,lots:0,...pr};
+const pvS=new Set();
+let qi=0,qCS=0,qA=false;
+function spr(){localStorage.setItem("nm5",JSON.stringify(pr));}
+function asc(n){pr.score+=n;spr();updUI();cAch();}
+function rank(s){return s>=300?"💎 Эксперт":s>=150?"🥇 Коллекционер":s>=50?"🥈 Любитель":"🥉 Новичок";}
+
+document.getElementById("uname").textContent=user.first_name||"Коллекционер";
+document.getElementById("av").textContent=(user.first_name||"К")[0];
+showPage("catalog",document.getElementById("nc"));
+
+function showPage(id,el){
+    document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+    document.querySelectorAll(".ni").forEach(n=>n.classList.remove("active"));
+    document.getElementById("page-"+id).classList.add("active");
+    el.classList.add("active");
+    document.getElementById("srch").style.display=id==="catalog"?"block":"none";
+    if(id==="catalog")renderCat();
+    if(id==="history")renderHist();
+    if(id==="auction")renderAuc();
+    if(id==="profile"){updUI();renderCol();renderQ();renderAch();}
+    tg?.HapticFeedback?.impactOccurred("light");
+}
+
+// CATALOG
+function gi(key){return(typeof IMGS!=="undefined"&&IMGS&&IMGS[key])?IMGS[key]:null;}
+
+function renderCat(f=""){
+    const q=f.toLowerCase();
+    const flt=C.filter(c=>!q||c.n.toLowerCase().includes(q)||c.y.toLowerCase().includes(q)||c.t.toLowerCase().includes(q)||c.p.includes(q));
+    const byP={};
+    flt.forEach(c=>{if(!byP[c.p])byP[c.p]=[];byP[c.p].push(c);});
+    let html="";
+    PD.filter(p=>byP[p.key]).forEach(pd=>{
+        html+=`<div style="font-size:11px;font-weight:700;color:${pd.color};text-transform:uppercase;letter-spacing:.5px;margin:14px 0 6px">${pd.title} · ${pd.sub}</div>`;
+        byP[pd.key].forEach(c=>{
+            const idx=C.indexOf(c);
+            const ic=pr.col.includes(c.n+"_"+c.y);
+            const src=gi(c.img);
+            const photo=src?`<img src="${src}" class="cphoto" loading="lazy">`:`<div class="cph">${c.e}</div>`;
+            html+=`<div class="card" onclick="oM(${idx})">${photo}
+                <div class="cinfo">
+                    <div class="ctitle">${c.n} <span style="font-size:12px;font-weight:400;color:var(--hint)">${c.y}</span></div>
+                    <div class="cmeta">${c.mat} · ${c.t}</div>
+                    <div class="cbuy">${c.buy[0]}</div>
+                    <div class="tags"><span class="tag tb">${c.p}</span>${ic?'<span class="tag tg">✅ В коллекции</span>':""}</div>
+                </div>
+            </div>`;
+        });
+    });
+    if(!html)html=`<p style="color:var(--hint);text-align:center;margin-top:40px">Ничего не найдено</p>`;
+    document.getElementById("cfeed").innerHTML=html;
+}
+renderCat();
+window.filterCoins=()=>renderCat(document.getElementById("csrch").value);
+
+function oM(idx){
+    const c=C[idx];
+    const ic=pr.col.includes(c.n+"_"+c.y);
+    const src=gi(c.img);
+    const photo=src?`<img src="${src}" class="mphoto" loading="lazy">`:`<div class="mph">${c.e}</div>`;
+    const bl=c.buy.map(b=>`<li>${b}</li>`).join("");
+    document.getElementById("mbody").innerHTML=`${photo}
+        <div class="mtitle">${c.n} · ${c.y}</div>
+        <div class="mrow"><span class="mlbl">Тип</span><span>${c.t}</span></div>
+        <div class="mrow"><span class="mlbl">Материал</span><span>${c.mat}</span></div>
+        <div class="mrow"><span class="mlbl">Период</span><span>${c.p}</span></div>
+        <div style="font-weight:600;font-size:13px;margin:10px 0 4px">💰 Что можно купить</div>
+        <ul class="buylist">${bl}</ul>
+        <div class="factbox">💡 ${c.fact}</div>
+        <button class="mbtn mba" onclick="tColl(${idx})" style="${ic?"background:#888":""}">
+            ${ic?"✅ В коллекции (убрать)":"➕ Добавить в коллекцию (+5 очков)"}
+        </button>
+        <button class="mbtn mbs" onclick="cM()">Закрыть</button>`;
+    document.getElementById("mover").classList.add("open");
+    tg?.HapticFeedback?.impactOccurred("medium");
+}
+window.tColl=function(idx){
+    const c=C[idx],k=c.n+"_"+c.y,i=pr.col.indexOf(k);
+    if(i===-1){pr.col.push(k);asc(5);tg?.HapticFeedback?.notificationOccurred("success");}
+    else{pr.col.splice(i,1);spr();}
+    cM();renderCat(document.getElementById("csrch").value);
+};
+function cM(){document.getElementById("mover").classList.remove("open");}
+window.cM=cM;
+window.handleOC=function(e){if(e.target===document.getElementById("mover"))cM();};
+
+// HISTORY
+const opP=new Set();
+function renderHist(){
+    let html="";
+    PD.forEach((p,i)=>{
+        const pc=C.filter(c=>c.p===p.key);
+        const thumbs=pc.slice(0,8).map(c=>{
+            const src=gi(c.img);
+            return `<div class="cth" onclick="oMH('${c.n}','${c.y}')">
+                ${src?`<img src="${src}" loading="lazy">`:`<div class="cthph">${c.e}</div>`}
+                <div class="cthi"><div class="cthn">${c.n}</div><div class="cthy">${c.y}</div></div>
+            </div>`;
+        }).join("");
+        const isO=opP.has(i);
+        html+=`<div class="pc">
+            <div class="ph" onclick="tP(${i})" style="border-left:4px solid ${p.color}">
+                <div><div class="pt" style="color:${p.color}">${p.title}</div><div class="ps">${p.sub}</div></div>
+                <div style="font-size:20px;color:var(--hint)" id="pa-${i}">${isO?"⌄":"›"}</div>
+            </div>
+            <div class="pb${isO?" open":""}" id="pb-${i}">
+                <div class="ptext">${p.ov.replace(/\n\n/g,"<br><br>")}</div>
+                <div class="pstats">
+                    <span class="pst">⚡ ${p.inf}</span>
+                    <span class="pst">💵 ${p.mx}</span>
+                    <span class="pst">🧱 ${p.mat}</span>
+                    <span class="pst">🌍 ${p.usd}</span>
+                </div>
+                ${thumbs?`<div style="font-size:13px;font-weight:600;padding:0 16px 8px">Деньги периода:</div><div class="cscroll">${thumbs}</div>`:""}
+                <div style="padding:0 16px 14px"><a class="lnk" href="https://www.russian-money.ru/" target="_blank">🔗 Найти монеты на russian-money.ru</a></div>
+            </div>
+        </div>`;
+    });
+    document.getElementById("pfeed").innerHTML=html;
+}
+window.tP=function(i){
+    const b=document.getElementById(`pb-${i}`),a=document.getElementById(`pa-${i}`);
+    if(opP.has(i)){b.classList.remove("open");a.textContent="›";opP.delete(i);}
+    else{b.classList.add("open");a.textContent="⌄";opP.add(i);
+        if(!pvS.has(i)){pvS.add(i);pr.pv=pvS.size;asc(10);}
+        setTimeout(()=>b.scrollIntoView({behavior:"smooth",block:"nearest"}),100);}
+};
+window.oMH=function(n,y){const idx=C.findIndex(c=>c.n===n&&c.y===y);if(idx!==-1)oM(idx);};
+
+// AUCTION — лоты хранятся в localStorage, видны всем пользователям в Mini App
+function gLots(){try{return JSON.parse(localStorage.getItem("nm_lots_v3"))||[];}catch(e){return[];}}
+function sLots(l){localStorage.setItem("nm_lots_v3",JSON.stringify(l));}
+
+let nPh=null;
+function renderAuc(){
+    const lots=gLots();
+    const feed=document.getElementById("lfeed");
+    if(!lots.length){
+        feed.innerHTML=`<div style="text-align:center;padding:30px 20px;color:var(--hint)">
+            <div style="font-size:52px;margin-bottom:10px">🪙</div>
+            <p style="font-size:14px">Пока нет лотов.<br>Станьте первым продавцом!</p>
+        </div>`;return;
+    }
+    feed.innerHTML=lots.map((lot,i)=>{
+        const photo=lot.ph?`<img src="${lot.ph}" class="lphoto" loading="lazy">`:`<div class="lph">🪙</div>`;
+        const isMine=lot.tid&&lot.tid===user.id;
+        const isAdm=user.id===AID;
+        return `<div class="lcard">${photo}
+            <div class="linfo">
+                <div class="ltitle">${lot.title}</div>
+                <div class="lprice">💰 ${lot.price}</div>
+                <div class="lmeta">${[lot.year,lot.mat,lot.per].filter(Boolean).join(" · ")}</div>
+                ${lot.desc?`<p style="font-size:13px;color:var(--hint);margin-bottom:10px">${lot.desc}</p>`:""}
+                <div style="font-size:12px;color:var(--hint);margin-bottom:10px">👤 ${lot.seller} · ${lot.date}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px">
+                    ${lot.tid&&!isMine?`<button class="lbtn" onclick="cS(${lot.tid})">📩 Написать продавцу</button>`:""}
+                    ${isMine||isAdm?`<button class="lbtn del" onclick="dL(${i})">🗑 Удалить</button>`:""}
+                </div>
+            </div>
+        </div>`;
+    }).join("");
+}
+window.cS=function(tid){tg?.openTelegramLink(`tg://user?id=${tid}`);};
+window.dL=function(i){const l=gLots();l.splice(i,1);sLots(l);renderAuc();};
+window.toggleAF=function(){const f=document.getElementById("aform");f.style.display=f.style.display==="none"?"block":"none";if(f.style.display==="block")f.scrollIntoView({behavior:"smooth"});};
+window.handlePhoto=function(input){
+    const file=input.files[0];if(!file)return;
+    const r=new FileReader();
+    r.onload=e=>{
+        nPh=e.target.result;
+        document.getElementById("upz").innerHTML="✅ Фото загружено";
+        document.getElementById("upz").classList.add("has");
+        const pv=document.getElementById("upprev");
+        pv.src=nPh;pv.style.display="block";
+    };
+    r.readAsDataURL(file);
+};
+window.submitLot=function(){
+    const title=document.getElementById("ft").value.trim();
+    const price=document.getElementById("fpr").value.trim();
+    if(!title||!price){tg?.showAlert("Заполните название и цену");return;}
+    const lots=gLots();
+    lots.unshift({
+        title,price,
+        desc:document.getElementById("fd").value,
+        per:document.getElementById("fp").value,
+        year:document.getElementById("fy").value,
+        mat:document.getElementById("fm").value,
+        ph:nPh||null,
+        seller:user.first_name||"Коллекционер",
+        tid:user.id||0,
+        date:new Date().toLocaleDateString("ru"),
+    });
+    sLots(lots);
+    pr.lots=(pr.lots||0)+1;
+    asc(15);
+    ["ft","fd","fy","fm","fpr"].forEach(id=>document.getElementById(id).value="");
+    document.getElementById("fp").selectedIndex=0;
+    document.getElementById("upz").innerHTML="📷 Нажмите чтобы выбрать фото";
+    document.getElementById("upz").classList.remove("has");
+    document.getElementById("upprev").style.display="none";
+    nPh=null;
+    window.toggleAF();
+    renderAuc();
+    tg?.HapticFeedback?.notificationOccurred("success");
+    tg?.showAlert("✅ Лот выставлен! Он виден в аукционе.");
+};
+
+// PROFILE
+function updUI(){
+    document.getElementById("ss").textContent=pr.score;
+    document.getElementById("sc").textContent=pr.col.length;
+    document.getElementById("sq").textContent=pr.qt;
+    document.getElementById("rbadge").textContent=rank(pr.score);
+}
+function renderCol(){
+    const el=document.getElementById("mcoll");
+    if(!pr.col.length){el.innerHTML=`<p style="color:var(--hint);font-size:13px">Добавляйте монеты из Каталога →</p>`;return;}
+    el.innerHTML=pr.col.map(k=>`<span class="chip">🪙 ${k.replace(/_/," · ")}</span>`).join("");
+}
+function renderAch(){
+    document.getElementById("achlist").innerHTML=ACH.map(a=>{
+        const u=a.c(pr);
+        return `<div class="ai${u?"":" locked"}"><div class="aico">${a.i}</div><div><div class="an">${a.n}${u?" ✓":""}</div><div class="ad">${a.d}</div></div></div>`;
+    }).join("");
+}
+function cAch(){renderAch();}
+
+// QUIZ
+function renderQ(){
+    const el=document.getElementById("qblock");
+    if(qi>=QQ.length){
+        el.innerHTML=`<p style="font-size:14px;margin-bottom:10px">✅ Пройдено! Верных: ${qCS}/${QQ.length}</p>
+            <button class="mbtn mbs" onclick="rQ()">🔄 Начать заново</button>`;return;
+    }
+    const q=QQ[qi];
+    el.innerHTML=`<div class="qp">Вопрос ${qi+1} из ${QQ.length}</div>
+        <div class="qq">${q.q}</div>
+        ${q.o.map((o,i)=>`<div class="qo" onclick="aQ(${i})">${o}</div>`).join("")}`;
+}
+window.aQ=function(sel){
+    if(qA)return;qA=true;
+    const q=QQ[qi];
+    document.querySelectorAll(".qo").forEach((o,i)=>{
+        if(i===q.a)o.classList.add("correct");
+        else if(i===sel&&i!==q.a)o.classList.add("wrong");
+    });
+    pr.qt=(pr.qt||0)+1;
+    if(sel===q.a){qCS++;pr.qc=(pr.qc||0)+1;asc(5);tg?.HapticFeedback?.notificationOccurred("success");}
+    else tg?.HapticFeedback?.notificationOccurred("error");
+    spr();
+    setTimeout(()=>{qi++;qA=false;renderQ();},900);
+};
+window.rQ=function(){qi=0;qCS=0;qA=false;renderQ();};
+</script>
+</body>
+</html>
